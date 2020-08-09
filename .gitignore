@@ -105,3 +105,4 @@ dist
 .vs/VSWorkspaceState.json
 .vs/GhaliBot/v16/.suo
 .vs/slnx.sqlite
+environment/bot_config.json
