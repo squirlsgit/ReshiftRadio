@@ -5,3 +5,5 @@
  https://www.npmjs.com/package/ytdl-core
  https://www.sitepoint.com/understanding-module-exports-exports-node-js/
  https://clockify.me/developers-api
+ https://discord.js.org/#/docs/main/stable/class/Guild?scrollTo=member
+ https://clockify.me/developers-api
