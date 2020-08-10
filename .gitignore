@@ -108,3 +108,4 @@ dist
 environment/bot_config.json
 environment/bot-config.json
 environment/bot-config.json
+environment/firebase-admin-key.json

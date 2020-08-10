@@ -5,20 +5,20 @@ const client = new Discord.Client();
 
 //#region Initializes Protocols
 function getEntityPath(name, ...dir) {
-	return `${dir.join('/')}/${name}`;
+	return `${dir.join('/')}${dir.length > 0? '/': ''}${name}`;
 }
 function getPrompts(collection, name, ...dir) {
 	if (!client[collection]) {
 		client[collection] = new Discord.Collection();
 	}
 	const stats = fs.lstatSync(getEntityPath(name, dir));
-	if (stats.isFile() && name.endsWith('.js')) {
+	if (stats.isFile() && name.endsWith('.js') && !name.startsWith('helper') && !name.startsWith('model') && !name.startsWith('component')) {
 		const protocol = require(getEntityPath(name, dir));
 		client[collection].set(getEntityPath(name, dir), protocol)
 	} else if (stats.isDirectory()) {
 		const docs = fs.readdirSync(getEntityPath(name, ...dir));
 		for (file of docs) {
-			getCommands(collection, file, dir.concat(name));
+			getPrompts(collection, file, dir.concat(name));
 		}
 	}
 

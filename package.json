@@ -20,6 +20,7 @@
   "homepage": "https://github.com/squirlsgit/GhaliBot#readme",
   "dependencies": {
     "discord.js": "^12.2.0",
+    "firebase-admin": "^9.0.0",
     "ytdl-core": "^3.2.0"
   },
   "devDependencies": {
