@@ -2,23 +2,33 @@ const Discord = require('discord.js');
 const { prefix, token } = require('./environment/bot-config.json');
 
 const client = new Discord.Client();
-client.commands = new Discord.Collection();
 
-
-// Init Commands 
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-	const command = require(`./commands/${file}`);
-	client.commands.set(command.name, command);
+//#region Initializes Protocols
+function getEntityPath(name, ...dir) {
+	return `${dir.join('/')}/${name}`;
 }
+function getPrompts(collection, name, ...dir) {
+	if (!client[collection]) {
+		client[collection] = new Discord.Collection();
+	}
+	const stats = fs.lstatSync(getEntityPath(name, dir));
+	if (stats.isFile() && name.endsWith('.js')) {
+		const protocol = require(getEntityPath(name, dir));
+		client[collection].set(getEntityPath(name, dir), protocol)
+	} else if (stats.isDirectory()) {
+		const docs = fs.readdirSync(getEntityPath(name, ...dir));
+		for (file of docs) {
+			getCommands(collection, file, dir.concat(name));
+		}
+	}
 
-
-// Init Listeners
-const listenerFiles = fs.readdirSync('./user-bot/listeners').filter(file => file.endsWith('.js'));
-for (const file of listenerFiles) {
-	const listener = require(`./user-bot/listeners/${file}`);
-	client.listeners.set(listener.name, listener);
 }
+//#endregion
+
+// Init Commands
+getPrompts('commands', 'commands');
+// Init Prompt Listeners - General version of commands.
+getPrompts('prompts', 'listeners', 'user-bot');
 
 
 /**
