@@ -19,8 +19,10 @@
   },
   "homepage": "https://github.com/squirlsgit/GhaliBot#readme",
   "dependencies": {
+    "@discordjs/opus": "^0.3.2",
     "axios": "^0.19.2",
     "discord.js": "^12.2.0",
+    "ffmpeg-static": "^4.2.6",
     "firebase-admin": "^9.0.0",
     "ytdl-core": "^3.2.0"
   },
