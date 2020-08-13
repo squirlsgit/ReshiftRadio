@@ -24,8 +24,14 @@ module.exports = {
       return;
     }
 
-    radio.addRadioFrequency(voicechannel);
-    message.channel.send(`Broadcasting on ${voicechannel.name}..`);
+    radio.addRadioFrequency(voicechannel).then(_v => {
+      if (_v) {
+        message.channel.send(`Broadcasting on ${voicechannel.name}..`)
+      } else {
+        message.channel.send("Failed to connect");
+      }
+      
+    });
 
   },
 };

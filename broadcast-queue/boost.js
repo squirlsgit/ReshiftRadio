@@ -21,7 +21,15 @@ module.exports = {
       return;
     }
 
-    radio.whitelist(voicechannel).then(() => message.channel.send(`Radio is enabled on ${voicechannel.name}`).catch(err => message.channel.send(`Could not enable radio on ${voicechannel.name} because ${err.message}`)));
+    radio.whitelist(voicechannel).then((v) => {
+      if (v) {
+
+        message.channel.send(`Radio is enabled on ${voicechannel.name}`);
+      } else {
+        message.channel.send(`Could not enable radio on ${voicechannel.name}`);
+      }
+    }).catch(err => message.channel.send(`Could not enable radio on ${voicechannel.name} because ${err.message}`))
+    
 
 
   },

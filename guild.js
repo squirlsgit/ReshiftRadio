@@ -31,11 +31,15 @@ class Guild {
     admin.firestore().collection(this.collection).doc(this.id).onSnapshot(guildref => {
       if (guildref.exists) {
         this.settings = guildref.data();
-        console.log(this.id, this.settings);
+        this.logger.info(this.id, this.settings);
       } else {
         this.settings = null;
       }
-      this.$settings.emit('update', this.settings);
+      console.log(this.$settings.listenerCount('update'));
+      if (this.$settings.listeners('update')) {
+        this.$settings.emit('update', this.settings);
+      }
+      
     }, err => {
         this.settings = null;
         return err;
@@ -70,9 +74,9 @@ class Guild {
     return admin.firestore().collection(this.collection).doc(this.id).update({ [`volume`]: typeof volume === 'string'? parseFloat(volume): volume });
   }
   addBroadcastableTag(tag) {
-    return admin.firestore().collection(this.collection).doc(this.id).update({ broadcastable_on: admin.firestore.FieldValue.arrayUnion([tag]) });
+    return admin.firestore().collection(this.collection).doc(this.id).update({ broadcastable_on: admin.firestore.FieldValue.arrayUnion(tag) });
   }
-  addBroadcastableTag(tag) {
+  removeBroadcastableTag(tag) {
     return admin.firestore().collection(this.collection).doc(this.id).update({ broadcastable_on: admin.firestore.FieldValue.arrayRemove(tag) });
   }
 
