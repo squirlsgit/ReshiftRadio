@@ -3,7 +3,7 @@ const discord = require('discord.js');
 const radio = require('./helper-radio.js');
 
 module.exports = {
-  description: 'Lists songs',
+  description: 'Stops broadcasting to channel',
 
   /**
    * 
@@ -11,6 +11,14 @@ module.exports = {
    * @param {...any} args
    */
   async execute(message, ...args) {
-    message.channel.send(`Songs in queue: \n${radio.queue.array().map(q => q.song).join('\n ')}`);
-  }
+
+
+    if (radio.currentConnection) {
+      radio.currentConnection.disconnect();
+      radio.channels.delete(radio.currentConnection.channel.id);
+      radio.currentConnection = null;
+      message.channel.send(`No longer broadcasting on ${voicechannel.name}..`);
+    }
+
+  },
 };

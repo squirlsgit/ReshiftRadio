@@ -1,7 +1,7 @@
 const discord = require('discord.js');
 const getUserSettings = require('../firestore/helper.js').getUserSettings;
 const clock = require('./helper.js').clock;
-const stopTimer = (userId) => {
+const stopTimer = async (userId) => {
   const settings = await getUserSettings(userId);
 
   const apikey = settings.clockify_key;

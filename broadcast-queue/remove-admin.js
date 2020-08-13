@@ -3,7 +3,7 @@ const discord = require('discord.js');
 const radio = require('./helper-radio.js');
 
 module.exports = {
-  description: 'Lists songs',
+  description: 'Remove host',
 
   /**
    * 
@@ -11,6 +11,12 @@ module.exports = {
    * @param {...any} args
    */
   async execute(message, ...args) {
-    message.channel.send(`Songs in queue: \n${radio.queue.array().map(q => q.song).join('\n ')}`);
-  }
+
+    const dethrone_members = message.mentions.members.array();
+
+    await Promise.all(dethrone_members.map(member => radio.removeRadioAdmin(message.member, member)));
+
+    message.channel.send("Removed Radio Host " + dethrone.map(member => member.displayName).join(', '));
+
+  },
 };

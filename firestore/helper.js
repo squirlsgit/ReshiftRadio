@@ -1,11 +1,12 @@
 var admin = require("firebase-admin");
 
 const collections = require('./collections.js');
-import { User } from './model-user';
+const { User } = require ('./model-user');
 
-var serviceAccount = require("src/environment/firebase-admin-key.json");
+var serviceAccount = require("../environment/firebase-admin-key.json");
 
 exports.init = () => {
+  console.log("initializing");
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://reshift-bot.firebaseio.com"

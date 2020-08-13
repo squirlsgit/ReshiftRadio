@@ -19,20 +19,20 @@ module.exports = {
     /**
      * @type {VoiceBroadcast}
      * */
-    const res = await radio.playBroadcast(message.member);
+    const res = await radio.openRadioStation(message.member, ...channels);
     if (res) {
-      message.channel.send(`Starting broadcast`);
+      message.channel.send(`Opened station`);
 
       res.on("end", () => {
 
-        message.channel.send("Radio Stopped");
+        message.channel.send("Radio Shutting Down");
       });
     } else {
-      message.channel.send("Radio failed to start.");
+      message.channel.send("Could not open station");
     }
     //res.on("subscribe", (stream) => console.log("Channel Added", stream.player.voiceConnection.channel.name));
     //res.on("end", () => )
-
+    
 
   },
 };

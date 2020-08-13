@@ -1,6 +1,6 @@
-import { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } from 'discord.js';
+const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
 const discord = require('discord.js');
-const radio = require('./helper-radio.js').default;
+const radio = require('./helper-radio.js');
 
 module.exports = {
   description: 'Enable channel',
@@ -21,7 +21,7 @@ module.exports = {
       return;
     }
 
-    radio.whiteout(voicechannel).then(() => message.channel.send(`Radio is enabled on ${voicechannel.name}`).catch(err => message.channel.send(`Could not enable radio on ${voicechannel.name} because ${err.message}`));
+    radio.whitelist(voicechannel).then(() => message.channel.send(`Radio is enabled on ${voicechannel.name}`).catch(err => message.channel.send(`Could not enable radio on ${voicechannel.name} because ${err.message}`)));
 
 
   },

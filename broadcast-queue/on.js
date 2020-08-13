@@ -1,6 +1,6 @@
-import { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } from 'discord.js';
+const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
 const discord = require('discord.js');
-const radio = require('./helper-radio.js').default;
+const radio = require('./helper-radio.js');
 
 module.exports = {
   description: 'Broadcasts to channel',
@@ -12,11 +12,10 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    voicechannels;
 
     const channel_name = args[0];
 
-
+    console.log(channel_name)
     let voicechannel = message.guild.channels.cache.find(channel => channel.name === channel_name && channel.type === 'voice');
     if (!voicechannel) voicechannel = message.member.voice.channel;
 

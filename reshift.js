@@ -1,7 +1,7 @@
-import { Collection } from 'discord.js';
-const Discord = require('discord.js');
-const { prefix, token } = require('./environment/bot-config.json');
 
+const Discord = require( 'discord.js' );
+const fs = require('fs');
+const { prefix, token } = require('./environment/bot-config.json');
 class Reshift {
 
 
@@ -23,7 +23,6 @@ class Reshift {
   //#region Initializes Protocols
 
 	getEntityPath(name, ...dir) {
-
 		return `${dir.join('/')}${dir.length > 0 ? '/' : ''}${name}`;
 
 	}
@@ -33,17 +32,17 @@ class Reshift {
 	/**
 	 * 
 	 * @param {any} prefix
-	 * @returns {Collection}
+	 * @returns {Discord.Collection}
 	 */
 	getPrefixCollection(prefix) {
-		if (this.Client[this.prefixMap[prefix]] instanceof Discord.Collection) return this.Client[this.prefixmap[prefix]];
+		if (this.Client[this.prefixMap[prefix]] instanceof Discord.Collection) return this.Client[this.prefixMap[prefix]];
 		else return null;
 	}
 
 	/**
 	 * 
-	 * @param {any} collection
-	 * @returns {Collection}
+	 * @param {string} collection
+	 * @returns { Discord.Collection }
 	 */
 	getCollection(collection) {
 		if (this.Client[collection] instanceof Discord.Collection) return this.Client[collection]
@@ -67,18 +66,20 @@ class Reshift {
 			this.prefixMap[`${prefix}-${collection}`] = collection;
 		}
 
-		const stats = fs.lstatSync(getEntityPath(name, dir));
+		const stats = fs.lstatSync(this.getEntityPath(name, ...dir));
 		if (stats.isFile() && name.endsWith('.js') && !name.startsWith('helper') && !name.startsWith('model') && !name.startsWith('component')) {
 
-			const protocol = require(getEntityPath(name, dir));
-			this.Client[collection].set(protocol.name || getEntityPath(name, dir).slice(0, -3), protocol); // e.g. !reshift-bot user-bot/ghali/helloworld
+			const protocol = require('./'+ this.getEntityPath(name, ...dir));
+			this.Client[collection].set(protocol.name || this.getEntityPath(name, ...dir.slice(1)).slice(0, -3), protocol); // e.g. !reshift-bot user-bot/ghali/helloworld
 
 		} else if (stats.isDirectory()) {
-			const docs = fs.readdirSync(getEntityPath(name, ...dir));
+			const docs = fs.readdirSync(this.getEntityPath(name, ...dir));
 
-			for (file of docs) {
-				getPrompts(collection, file, dir.concat(name));
-			}
+			docs.forEach(file => {
+
+				this.getPrompts(collection, file, dir.concat(name));
+			});
+			
 		}
 
 	}
@@ -89,4 +90,4 @@ class Reshift {
 }
 
 const Bot = new Reshift();
-export default Bot
+exports.default = Bot

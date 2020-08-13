@@ -1,12 +1,12 @@
-import { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } from 'discord.js';
-import { Guild } from '../guild';
-
+const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
+const Guild = require('../guild.js');
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
+const ytpl = require('ytpl');
 const admin = require('firebase-admin');
 const Bot = require('../reshift.js').default;
 
-export class Radio {
+class Radio {
   /**
    * @type {Guild}
    */
@@ -27,6 +27,7 @@ export class Radio {
    */
   broadcaster
 
+  
   channels = new Discord.Collection()
   collection = 'blackouts';
 
@@ -36,171 +37,236 @@ export class Radio {
   queue = new Discord.Collection()
 
   limit_queue_size = 100;
-
+  loops_enabled = true;
   randomBroadcast = false;
   limitBroadcastsPerHost = 1;
+
   hosts = new Discord.Collection();
 
   video_filters = new Discord.Collection();
 
-  only_music = true;
   maximum_video_length = 600;
 
+  autoplay = true;
+
+  broadcastable_tags = ['Radio'];
+
   /**
-   * 
+   * @type {GuildMember}
+   */
+  stalk;
+
+  /**
+   * @type {GuildMember}
+   */
+  avoid;
+
+  /**
+   * @type {VoiceConnection}
+   */
+  currentConnection;
+
+  /**
    * 
    * @param {Guild} guild
    */
   constructor(guild) {
     this.guild = guild;
+    this.guild.$settings.addListener('update', this.applyGuildSettings);
+
+    // Track voice channel changes.
+    Bot.Client.on('voiceStateUpdate', async (oldv, newv) => {
+      // If a user moves to a channel.
+      if ((!oldv.channel && newv.channel) || (newv.channel && oldv.channel.id !== newv.channel.id)) {
+        if (this.stalk && newv.member.id === this.stalk.id) {
+          await this.addRadioFrequency(newv.channel);
+        }
+        if (this.avoid && this.avoid.id === newv.member.id && this.currentConnection && this.currentConnection.channel.id === newv.channel.id) {
+          // Connect to a previous channel if we can. Otherwise just disconnect.
+          this.currentConnection.disconnect();
+          const newchannel = this.channels.find(channel => channel.id !== newv.channel.id);
+          if (newchannel) await this.addRadioFrequency(newchannel);
+
+        }
+
+      }
+    });
+  }
+
+  /**
+   * 
+   * @param {{video_length: number, broadcastable_on: string[], hosts: {[userId:string]: boolean}, restrict_broadcast: boolean, volume: number}} settings
+   */
+  applyGuildSettings(settings) {
+    if (settings.video_length) this.maximum_video_length = settings.video_length;
+    if (settings.broadcastable_on) this.broadcastable_tags = settings.broadcastable_on;
+    if (typeof settings.volume !== 'undefined') this.default_volume = settings.volume;
+  }
+
+  async saveGuildSettings() {
+    return this.guild.saveSettings({
+      video_length: this.maximum_video_length,
+      broadcastable_on: this.broadcastable_tags,
+      volume: this.default_volume
+    });
   }
 
 
   /**
    * 
-   * Removes channel from playable list. All channels are playable to by default. Stops guild radio.
+   * Removes channel from playable list. 
    * @param {Channel} channel
    * @returns {Promise<void>}
    */
-  blackout(channel) {
+  blacklist(channel) {
     if (channel.type !== 'voice') return;
-    return admin.firestore().collection(`${this.collection}`).doc(channel.id).set({
-      guildId: this.guild.id
-    }, { merge: true });
+    return this.guild.removeBroadcastableTag(channel.name);
+  }
+  /**
+   * @returns {Promise<Array<string>>} A list of channel ids that are NOT to be played on. EVER. Needs to be manually updated.
+   * */
+  fetchBlackouts() {
+    return admin.firestore().collection(`${this.collection}`).where('guildId', '==', this.guild.id).get().then(blackoutrefs => {
+      return blackoutrefs.docs.map(blackoutref => blackoutref.id);
+    }).catch(err => []);
   }
 
   /**
    *
-   * Adds channel to playable list. All channels are playable to by default. Stops guild radio.
+   * Adds tag to playable list. 
    * @param {Channel} channel
    * @returns {Promise<void>}
    */
-  whiteout(channel) {
+  whitelist(channel) {
     if (channel.type !== "voice") return;
-    return admin.firestore().collection(`${this.collection}`).doc(channel.id).delete();
-  }
-  /**
-   * @returns {Promise<Array<string>>} A list of channel ids that are NOT to be played on.
-   * */
-  fetchBlackouts() {
-    return admin.firestore().collection(`${this.collection}`).where('guildId', '==', this.guild.id).get().then(blackoutrefs => {
-      return blackoutrefs.docs.map(blackoutref =>  blackoutref.id );
-    }).catch(err => []);
+    return this.guild.addBroadcastableTag(channel.name);
   }
   
   /**
-   * Starts a Radio Broadcast on channels. If no channels given, broadcast will still play.
+   * Starts a Radio Broadcast on channels. If Station exists, adds channels, but nothing more. To start a broadcast, add a song to the playlist.
    * @param {GuildMember} member
    * @param {Array<VoiceChannel>} channels
-   * @returns {string} message
+   * @returns {Promise<VoiceBroadcast>} message
    */
-  async broadcast(member, ...channels) {
-    if (!this.hosts.has(member.id)) return;
+  async openRadioStation(member, ...channels) {
+
+    if (!this.isRadioAdmin(member)) {
+      this.guild.logger.info(member.id, member.displayName);
+      this.guild.logger.info(this.hosts.keyArray());
+      return;
+    }
     const deny = await this.fetchBlackouts();
-
     channels.forEach(channel => this.addRadioFrequency(channel, deny))
-    if (this.station) this.station.end();
+    if (this.station) return;
 
-    this.station = new Bot.Client.voice.createBroadcast();
-
-    if(queue.size > 0) this.startBroadcast();
-
+    this.station = Bot.Client.voice.createBroadcast();
+    
     return this.station;
 
-
-    //this.station.on("end", () => {
-    //  console.log("Station Stopped")
-    //});
-    //this.station.on("subscribe", (stream) => console.log("Channel Added", stream.player.voiceConnection.channel.name));
-    //this.station.on("end", () => )
-
   }
 
-  repeatsEnabled = true;
+  closeRadioStation(member) {
+    if (!this.isRadioSuperAdmin(member)) return;
+    this.hosts.clear();
+    this.queue.clear();
+    this.video_filters.clear();
+    this.channels.clear();
+    this.station.end();
+  }
+
 
   //private
-  startBroadcast() {
+  async playNext() {
 
-    const entry = this.queue.first();
-    const queueAt = this.queue.firstKey();
-    if (entry && this.station) {
-      if (repeatsEnabled) {
-
-        this.broadcastNext(entry).then(_v => {
-
-          this.queue.delete(queueAt);
-
-          // Play next song
-          this.startBroadcast();
-
-        }, e => {
-            if (e) {
-
-              this.queue.delete(queueAt);
-              this.startBroadcast();
-              console.error(e)
-
-            }
-        });
-
-
-      } else {
-
-        entry.stream().then(_v => {
-
-          this.queue.delete(queueAt);
-
-          // Play next song
-          this.startBroadcast();
-
-        }, e => {
-          this.queue.delete(queueAt);
-          this.startBroadcast();
-          console.error(e)
-
-        });
-      }
-      
-    } else if (this.station) {
-      // a new song in queue does not exist. End broadcast.
-      this.endBroadcast("bypass");
-
+    if (this.queue.size === 0) {
+      this.guild.logger.warn("No songs in queue. Ceasing playback");
+      if (this.broadcaster) this.broadcaster.destroy("out of songs");
+      return;
     }
+    if (!this.station) {
+      this.guild.logger.warn("No station to play song.");
+      return;
+    }
+
+    const song = this.queue.first();
+    const qAt = this.queue.firstKey();
+
+    this.currentSong = song;
+
+    if (this.loops_enabled) {
+      this.guild.logger.info("Broadcasting..", song.song);
+      
+      return this.playSong(song).then(_v => {
+
+        this.guild.logger.info("shifting q", qAt);
+        this.currentSong = null;
+        this.queue.delete(qAt);
+          
+        // Play next song
+        if(this.queue.size > 0 && this.autoplay) this.playNext();
+
+      }, e => {
+          if (e) {
+            console.error("skipping song;", e)
+            this.currentSong = null;
+            this.queue.delete(qAt);
+            this.playNext();
+
+          }
+      });
+
+
+    } else {
+      this.currentSong = song;
+      song.stream().then(_v => {
+        this.currentSong = null;
+        this.queue.delete(qAt);
+
+        // Play next song
+        this.playNext();
+
+      }, e => {
+        this.currentSong = null;
+        this.queue.delete(qAt);
+        this.playNext();
+        console.error(e)
+
+      });
+    } 
   }
 
-  /**
-   * 
-   * @param {GuildMember | string} member
-   */
-  endBroadcast(member) {
-    if (((typeof member === 'string' && member === 'bypass') || this.hosts.has(member.id)) && this.station) {
-      this.station.end();
-      this.station = null;
+  async playBroadcast(member) {
+    if (!this.isRadioAdmin(member)) return;
+    if (this.broadcaster) {
+      this.broadcaster.destroy(new Error("Restarting Broadcast"));
     }
+    return this.playNext();
   }
 
   pauseBroadcast(member) {
-    if (this.hosts.has(member.id) && this.broadcaster) {
+    if (this.isRadioAdmin(member) && this.broadcaster) {
       this.broadcaster.pause();
     }
   }
   resumeBroadcast(member) {
-    if (this.hosts.has(member.id) && this.broadcaster) {
+    if (this.isRadioAdmin(member) && this.broadcaster) {
       this.broadcaster.resume();
     }
   }
   setBroadcastVolume(member,volume) {
 
-    if (this.hosts.has(member.id) && this.broadcaster) {
+    if (this.isRadioAdmin(member) && this.broadcaster) {
       this.broadcaster.setVolume(volume);
     }
   }
   skipSong(member) {
-    if (this.hosts.has(member.id) && this.broadcaster) {
-      if (this.queue.first && this.station) {
+    if (this.isRadioAdmin(member) && this.broadcaster) {
+      if (this.queue.first() && this.station) {
         
         this.broadcaster.destroy(new Error("Skipping Song"));
 
+        this.queue.delete(this.queue.firstKey());
+        this.playNext();
       }
       
     }
@@ -214,15 +280,28 @@ export class Radio {
    * @param {VoiceChannel} channel
    * @param {string[]} deny
    */
-  addRadioFrequency(channel, deny) {
-    if (this.channels.has(channel.id)) return;
-    if (!deny) let deny = await this.fetchBlackouts();
-    if (deny.includes(channel.id)) return;
+  async addRadioFrequency(channel, deny) {
+    if (!this.station) {
+      this.guild.logger.warn('Station unlisted. Channel could not subscribe to station.', channel.name);
+      return;
+    }
+
+    if (!deny) deny = await this.fetchBlackouts();
+    if (deny.includes(channel.id)) {
+      this.guild.logger.warn("Could not join channel. It is blacklisted. If this is a mistake check with a developer.", channel.name, channel.id);
+      return;
+    }
+
+    if (!this.broadcastable_tags.find(tag => channel.name.toLowerCase().endsWith(tag.toLowerCase()))) {
+      this.guild.logger.warn(`Please whitelist the channel before trying to connect. Run <!reshift-broadcast boost ${channel.name}>`);
+      return;
+    }
     
     channel.join().then(connection => {
       const streamDispatch = connection.play(this.station);
+      this.guild.logger.info("Setting channel id", channel.id);
       this.channels.set(channel.id, streamDispatch);
-    }).catch(err => null);
+    }).catch(err => console.error(err));
 
   }
 /**
@@ -230,17 +309,19 @@ export class Radio {
  * @param {VoiceChannel} channel
  */
   removeRadioFrequency(channel) {
-    if (!this.channels.has(channel.id)) return;
+    if (!this.channels.has(channel.id)) {
+      this.guild.logger.info("no channel id", channel.id, channel.name);
+      return;
+    }
 
+    if (this.currentConnection && this.currentConnection.channel.id === channel.id) this.currentConnection.disconnect();
     /**
-     * @type {StreamDispatcher}
+     * @type {connection: VoiceConnection, ...StreamDispatcher} 
      * */
     const stream = this.channels.get(channel.id);
-
     // Unsubscribes channel
     stream.destroy();
     this.channels.delete(channel.id);
-
   }
 
   /**
@@ -248,11 +329,11 @@ export class Radio {
    * @param {GuildMember} member
    * @param {string} youtube_link
    *
-   * @param {{volume: number, repeat: number}} options
+   * @param {{playlist: boolean, volume: number, repeat: number}} options
    */
-  queueYoutubeBroadcast(member, youtube_link, options) {
+  enqueueYoutubeSong(member, youtube_link, options) {
     if (this.queue.size >= this.limit_queue_size) return;
-    if (this.hosts.has(member.id) || !this.limitBroadcastsPerHost || !this.queue.filter(( player, _queuedAt) => player.member.id === member.id).size < this.limitBroadcastsPerHost ) ) {
+    if (this.guild.isHost(member.id) || this.hosts.has(member.id) || !this.limitBroadcastsPerHost || !this.queue.filter(( player, _queuedAt) => player.member.id === member.id).size < this.limitBroadcastsPerHost ) {
       // Set song
       this.queue.set(Date.now(), {
         member: member,
@@ -261,11 +342,32 @@ export class Radio {
         ...options
       });
 
-      if (this.station && this.queue.size === 1) {
-        this.startBroadcast();
+      if (this.station && this.queue.size === 1)
+      {
+        this.guild.logger.info("Starting broadcast");
+        this.playNext();
       }
 
     }
+  }
+  enqueuYoutubePlaylist(member, yt_playlist_link, options) {
+    return new Promise((res, rej) => {
+      ytpl(yt_playlist_link, (err, list) => {
+        if (err) {
+          rej(err);
+          return;
+        }
+        list.items.slice(0, this.limit_queue_size).forEach(ytl => {
+          this.enqueueYoutubeSong(member, ytl.url, options);
+        });
+       
+        res(true);
+      })
+    }).then(_v => {
+      // Restart broadcast
+      this.playBroadcast();
+    });
+    
   }
 
   /**
@@ -273,12 +375,13 @@ export class Radio {
    * @param {{stream: (options: any) => Promise<void>, volume: number, member: GuildMember, repeat: number }} q
    * @returns {Promise<any>}
    */
-  broadcastNext(q) {
+  playSong(q) {
+    this.guild.logger.info(q, q.stream);
     return q.stream({ volume: q.volume, repeat: q.repeat }).then(async _v => {
       // Played song.
-      if (q.repeat > 0 && this.hosts.has(q.member.id)) {
+      if (this.loops_enabled && q.repeat > 0 && this.isRadioAdmin(q.member)) {
         q.repeat = q.repeat - 1;
-        await this.broadcastNext(q);
+        await this.playSong(q);
         return true;
       } else {
         return true;
@@ -298,29 +401,40 @@ export class Radio {
   broadcastFactory(type, resource) {
     return (options) => {
       
-      new Promise((res, rej) => {
-        if (!this.station) {
-          rej("Station Unavailable");
-          return;
-        }
-
+      return new Promise( (res, rej) => {
+        
         if (type === 'youtube') {
-          if (this.shouldSkipYoutubeVideo(resource)) rej(new Error("Skipping this video; Check logs for info."));
+          this.shouldSkipYoutubeVideo(resource).then(skip => {
+            if (skip) {
+              this.guild.logger.info("skipping youtube video", resource);
+              rej(new Error("Skipping this video; Check logs for info."));
+              return;
+            }
 
-          const stream = ytdl(resource, { filter: "audioonly" });
-          // Broadcast
+            try {
+              const stream = ytdl(resource, { filter: "audioonly" });
+              // Broadcast
 
-          this.broadcaster = this.station.play(stream, {volume: options.volume || 1});
-          // Listen for end or error, and resolve / reject
+              this.broadcaster = this.station.play(stream, { volume: options.volume || this.default_volume || 1 });
+              // Listen for end or error, and resolve / reject
 
-          // Error can happen for any number of reasons. Including if the broadcaster was destroyed. Should bubble up to master player.
-          this.broadcaster.addListener("error", (err) => {
-            rej(err);
-          });
+              // Error can happen for any number of reasons. Including if the broadcaster was destroyed. Should bubble up to master player.
+              this.broadcaster.addListener("error", (err) => {
+                rej(err);
+              });
 
-          // On finish, play next song if any
-          this.broadcaster.on("finish", () => {
-            res(true);
+              // On finish, play next song if any
+              this.broadcaster.on("finish", () => {
+                res(true);
+              });
+
+            } catch (e) {
+              rej(e);
+            }
+            
+          }).catch(e => {
+            //skip
+            rej(e);
           });
 
         }
@@ -338,12 +452,33 @@ export class Radio {
     this.limitBroadcastsPerHost = limit;
   }
 
-  officiateHost(member) {
-    this.hosts.set(member.id, member);
+  /**
+   * 
+   * Official hosts for server -- more permanent. has more access rights.
+   * @param {Discord.GuildMember} member
+   */
+  isRadioAdmin(member) {
+    return this.guild.isHost(member) || member.hasPermission("ADMINISTRATOR") || this.hosts.has(member.id);
+  }
+  isRadioSuperAdmin(member) {
+    return this.guild.isHost(member) || member.hasPermission("ADMINISTRATOR");
+  }
+  addRadioAdmin(auth_member, member) {
+    if (this.isRadioSuperAdmin(auth_member)) return this.guild.addHost(member.id);
+  }
+  removeRadioAdmin(member) {
+    if (this.isRadioSuperAdmin(auth_member)) return this.guild.removeHost(member.id);
   }
 
-  removeHost(member) {
-    if(this.hosts.has(member.id)) this.hosts.delete(member.id);
+
+
+  // local hosts
+  officiate(auth_member, member) {
+    if(this.isRadioAdmin(auth_member)) return this.hosts.set(member.id, member);
+  }
+
+  deplatform(auth_member, member) {
+    if (this.isRadioAdmin(auth_member)) return this.hosts.delete(member.id);
   }
 
   
@@ -354,20 +489,21 @@ export class Radio {
   async shouldSkipYoutubeVideo(url) {
     let info = await ytdl.getBasicInfo(url);
 
-    if (!info) return true;
-
-    if (this.only_music && info.media.category !== 'Music') {
-      console.log("Invalid category: Category is not music", info.media.category);
+    if (!info) {
+      this.guild.logger.info("didnt find video", url);
       return true;
     }
-    if (this.maximum_video_length < info.length_seconds) {
-      console.log("video too long");
+    this.guild.logger.info(info);
+
+    
+    if (this.maximum_video_length < info.videoDetails.lengthSeconds) {
+      this.guild.logger.info("video too long");
       return true;
     }
 
-    return this.video_filters.size === 0 || this.video_filters.filter((filter) => {
+    return this.video_filters.size !== 0 && this.video_filters.filter((filter) => {
       if (Object.keys(filter).filter(param => filter[param] === info.author[param] || filter[param] === info.media[param]).length > 0) {
-        console.log("Detected an issue with video", Object.values(filter), info.media, info.author );
+        this.guild.logger.info("Detected an issue with video", Object.values(filter), info.media, info.author );
         return true;
       } else return false;
     }).size > 0;
@@ -380,24 +516,8 @@ export class Radio {
    * @param {string} channel_url
    */
   addChannelFilter(member, channel_url) {
-    if (!this.hosts.has(member.id)) return;
+    if (!this.isRadioAdmin(member)) return;
     this.addVideoFilter(`${member.displayName}-${channel_url}`, {channel_url: channel_url})
-  }
-  addArtistFiter(member, artist) {
-    if (!this.hosts.has(member.id)) return;
-    this.addVideoFilter(`${member.displayName}-${artist}`, { artist: artist });
-  }
-  addArtistUrlFiter(member, artist_url) {
-    if (!this.hosts.has(member.id)) return;
-    this.addVideoFilter(`${member.displayName}-${artist_url}`, { artist_url: artist_url });
-  }
-  addCategoryFiter(member, category) {
-    if (!this.hosts.has(member.id)) return;
-    this.addVideoFilter(`${member.displayName}-${category}`, { category: category });
-  }
-  addArtistFiter(member, song) {
-    if (!this.hosts.has(member.id)) return;
-    this.addVideoFilter(`${member.displayName}-${song}`, { song: song });
   }
   
   //private
@@ -415,49 +535,24 @@ export class Radio {
    * @param {GuildMember} member
    * @param {...GuildMember} members
    */
-  addRadioHosts(author, author_member, ...members) {
-    if (author_member.guild.roles.cache.find((role) => role.name === 'dev').comparePositionTo(author_member.roles.highest) >= 0 || author.id === '149368319735103490') {
-      members.forEach(member => this.hosts.set(member.id, member));
+  async addRadioHosts(author_member, set_as_admin, ...members) {
+    if (this.isRadioAdmin(author_member)) {
+
+      if (set_as_admin) {
+        return Promise.all(members.map(member => this.addRadioAdmin(member)));
+      } else {
+        members.forEach(member => {
+          if (set_as_admin) {
+            this.addRadioAdmin(member);
+          } this.hosts.set(member.id, member);
+        });
+      }
     }
     
   }
-/**
- *
- * @param {User} user
- * @param {GuildMember} member
- */
-  removeRadioHost(user, member) {
 
-  }
-
-  addRadioFilter() {
-
-  }
-
-  removeRadioFilter() {
-
-  }
-
-
-  /**
-   * Plays on channel if Channel is not in Broadcast List.
-   * @param {User} user
-   * @param {Channel} channel
-   */
-  play(user,channel) {
-    
-    //if(channel === 'dm' || channel)
-  }
-  /**
-   * 
-   * @param {User} user
-   * @param {any} channel
-   */
-  stop(user, channel) {
-
-  }
 
 }
 
-const radio = new Radio();
-export default radio;
+const radio = new Radio(new Guild('741758819780001854'));
+module.exports = radio;

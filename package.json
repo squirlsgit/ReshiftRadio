@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon ./index.js"
+    "start": "nodemon ./index.js --experimental-json-modules"
   },
+  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/squirlsgit/GhaliBot.git"
@@ -24,7 +25,9 @@
     "discord.js": "^12.2.0",
     "ffmpeg-static": "^4.2.6",
     "firebase-admin": "^9.0.0",
-    "ytdl-core": "^3.2.0"
+    "winston": "^3.3.3",
+    "ytdl-core": "^3.2.0",
+    "ytpl": "^0.2.4"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"

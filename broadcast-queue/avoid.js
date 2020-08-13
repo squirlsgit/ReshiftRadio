@@ -3,7 +3,7 @@ const discord = require('discord.js');
 const radio = require('./helper-radio.js');
 
 module.exports = {
-  description: 'Lists songs',
+  description: 'Adds song to queue',
 
   /**
    * 
@@ -11,6 +11,8 @@ module.exports = {
    * @param {...any} args
    */
   async execute(message, ...args) {
-    message.channel.send(`Songs in queue: \n${radio.queue.array().map(q => q.song).join('\n ')}`);
-  }
+
+    radio.avoid = message.mentions.members.first();
+    message.author.dmChannel.send("Now avoiding member " + radio.avoid.displayName);
+  },
 };

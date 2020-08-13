@@ -1,6 +1,6 @@
-import { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } from 'discord.js';
+const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
 const discord = require('discord.js');
-const radio = require('./helper-radio.js').default;
+const radio = require('./helper-radio.js');
 
 module.exports = {
   description: 'Remove host',
@@ -14,7 +14,7 @@ module.exports = {
 
     const dethrone_members = message.mentions.members.array();
 
-    dethrone_members.forEach(member => radio.removeHost(member));
+    dethrone_members.forEach(member => radio.deplatform(message.member, member));
 
     message.channel.send("Disenfranchised " + dethrone_members.map(member => member.displayName).join(', '));
 

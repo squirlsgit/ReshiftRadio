@@ -1,6 +1,6 @@
-import { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } from 'discord.js';
+const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
 const discord = require('discord.js');
-const radio = require('./helper-radio.js').default;
+const radio = require('./helper-radio.js');
 
 module.exports = {
   description: 'Adds radio host',
@@ -13,8 +13,7 @@ module.exports = {
   async execute(message, ...args) {
 
     const throne_members = message.mentions.members.array();
-
-    radio.addRadioHosts(message.author, message.member, ...throne_members);
+    radio.addRadioHosts(message.member, false, ...throne_members);
 
     message.channel.send("Platformed " + throne_members.map(member => member.displayName).join(', '));
 
