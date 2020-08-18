@@ -13,7 +13,7 @@ module.exports = {
   async execute(message, ...args) {
 
 
-    const channel_name = args[0];
+    const channel_name = args.join(' ');
 
     console.log(channel_name)
     let voicechannel = message.guild.channels.cache.find(channel => channel.name === channel_name && channel.type === 'voice');

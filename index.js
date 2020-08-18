@@ -17,6 +17,7 @@ Bot.getPrompts('clock', 'clockify');
 
 Bot.getPrompts('broadcast', 'broadcast-queue');
 
+Bot.getPrompts('help', 'tooltips');
 Bot.init();
 
 

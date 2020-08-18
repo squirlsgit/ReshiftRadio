@@ -12,7 +12,7 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    if (radio.station) {
+    if (radio.station && radio.broadcaster) {
       radio.broadcaster.destroy();
     }
 

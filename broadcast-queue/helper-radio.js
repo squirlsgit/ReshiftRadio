@@ -180,6 +180,7 @@ class Radio {
     this.video_filters.clear();
     this.channels.clear();
     this.station.end();
+    this.station = null;
   }
 
 
@@ -579,5 +580,5 @@ class Radio {
 
 }
 
-const radio = new Radio(new Guild('741758819780001854'));
+const radio = new Radio(new Guild('735904221999792189'));
 module.exports = radio;
