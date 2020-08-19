@@ -14,7 +14,7 @@ module.exports = {
 
     const dethrone_members = message.mentions.members.array();
 
-    await Promise.all(dethrone_members.map(member => radio.addRadioAdmin(message.member, member)));
+    await Promise.all(dethrone_members.map(member => radio(message.guild.id).addRadioAdmin(message.member, member)));
 
     message.channel.send("Removed Radio Host " + dethrone.map(member => member.displayName).join(', '));
 

@@ -14,7 +14,7 @@ module.exports = {
 
     const dethrone_members = message.mentions.members.array();
 
-    dethrone_members.forEach(member => radio.deplatform(message.member, member));
+    dethrone_members.forEach(member => radio(message.guild.id).deplatform(message.member, member));
 
     message.channel.send("Disenfranchised " + dethrone_members.map(member => member.displayName).join(', '));
 

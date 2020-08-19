@@ -12,7 +12,7 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    radio.pauseBroadcast(message.member);
+    radio(message.guild.id).pauseBroadcast(message.member);
     message.channel.send(`Paused broadcast`);
 
   },

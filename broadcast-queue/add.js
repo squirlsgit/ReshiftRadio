@@ -16,11 +16,11 @@ module.exports = {
     const volume = args[1];
     const repeat = args[2];
     if (args.includes('--playlist')) {
-      radio.enqueuYoutubePlaylist(message.member, link, { volume, repeat })
+      radio(message.guild.id).enqueuYoutubePlaylist(message.member, link, { volume, repeat })
 
     } else {
 
-      radio.enqueueYoutubeSong(message.member, link, { volume, repeat });
+      radio(message.guild.id).enqueueYoutubeSong(message.member, link, { volume, repeat });
     }
     
   },

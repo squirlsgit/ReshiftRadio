@@ -12,7 +12,7 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    radio.closeRadioStation(message.member);
+    radio(message.guild.id).closeRadioStation(message.member);
     message.channel.send("Stopped broadcast. Queue still exists and can resume");
   },
 };

@@ -12,7 +12,7 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    radio.skipSong(message.member);
+    radio(message.guild.id).skipSong(message.member);
     message.channel.send(`Skipped song`);
 
   },

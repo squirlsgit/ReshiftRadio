@@ -12,7 +12,7 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    radio.avoid = message.mentions.members.first();
-    message.author.dmChannel.send("Now avoiding member " + radio.avoid.displayName);
+    radio(message.guild.id).avoid = message.mentions.members.first();
+    message.author.dmChannel.send("Now avoiding member " + radio(message.guild.id).avoid.displayName);
   },
 };

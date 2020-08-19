@@ -11,7 +11,7 @@ module.exports = {
    * @param {...any} args
    */
   async execute(message, ...args) {
-    radio.setBroadcastVolume(message.member, parseFloat(args[0]));
+    radio(message.guild.id).setBroadcastVolume(message.member, parseFloat(args[0]));
     message.channel.send("Updated volume to " + args[0]);
   }
 };

@@ -175,6 +175,8 @@ class Radio {
 
   closeRadioStation(member) {
     if (!this.isRadioSuperAdmin(member)) return;
+
+    if (this.currentConnection && this.currentConnection.channel.id === channel.id) this.currentConnection.disconnect();
     this.hosts.clear();
     this.queue.clear();
     this.video_filters.clear();
@@ -580,5 +582,43 @@ class Radio {
 
 }
 
-const radio = new Radio(new Guild('735904221999792189'));
-module.exports = radio;
+
+const radios = new Discord.Collection();
+
+/**
+ */
+/**
+ * 
+ * @param {Discord.Client} client
+ * @param {string} guildId
+ */
+const addRadio = (guildId) => {
+  if (Bot.Client.guilds.cache.has(guildId)) {
+    if (radios.has(guildId)) {
+      /**
+       * @type {Radio}
+       * */
+      const radio = radios.get(guildId);
+      radio.guild.logger.info("Guild has a radio. Not creating new radio.");
+      return;
+    }
+
+    radios.set(guildId, new Radio(new Guild(guildId)));
+    return radios.get(guildId);
+  }
+  //new Radio(new Guild('735904221999792189'));
+  
+}
+
+const radio = (guildId) => {
+  if (radios.has(guildId)) {
+    return radios.get(guildId);
+  } else return addRadio(Bot.Client, guildId);
+  
+}
+
+module.exports = {
+  radio,
+  addRadio,
+  radios
+};

@@ -12,6 +12,6 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    message.channel.send(`Current Filters: ${radio.video_filters.keyArray().map(id => `${id} = ${radio.video.filters.get(id)}`).join(", ")}`);
+    message.channel.send(`Current Filters: ${radio(message.guild.id).video_filters.keyArray().map(id => `${id} = ${radio(message.guild.id).video.filters.get(id)}`).join(", ")}`);
   },
 };

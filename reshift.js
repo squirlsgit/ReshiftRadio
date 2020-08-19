@@ -63,7 +63,7 @@ class Reshift {
 
 		if (!this.getCollection(collection)) {
 			this.Client[collection] = new Discord.Collection();
-			this.prefixMap[`${prefix}-${collection}`] = collection;
+			this.prefixMap[`${prefix}${collection}`] = collection;
 		}
 
 		const stats = fs.lstatSync(this.getEntityPath(name, ...dir));

@@ -19,7 +19,7 @@ module.exports = {
     /**
      * @type {VoiceBroadcast}
      * */
-    const res = await radio.openRadioStation(message.member, ...channels);
+    const res = await radio(message.guild.id).openRadioStation(message.member, ...channels);
     if (res) {
       message.channel.send(`Opened station`);
 

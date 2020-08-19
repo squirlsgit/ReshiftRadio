@@ -27,10 +27,10 @@ module.exports = {
     
 
     apply.forEach(filter => {
-      radio.addVideoFilter(`${message.member.displayName}-${Object.keys(filter)[0]}`, filter);
+      radio(message.guild.id).addVideoFilter(`${message.member.displayName}-${Object.keys(filter)[0]}`, filter);
     });
 
-    message.channel.send(`Current Filters: ${radio.video_filters.keyArray().map(id => `${id} = ${radio.video.filters.get(id)}`).join(", ")}`);
+    message.channel.send(`Current Filters: ${radio(message.guild.id).video_filters.keyArray().map(id => `${id} = ${radio(message.guild.id).video.filters.get(id)}`).join(", ")}`);
 
   },
 };

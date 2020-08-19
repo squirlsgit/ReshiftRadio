@@ -21,7 +21,7 @@ module.exports = {
       return;
     }
 
-    radio.blacklist(voicechannel).then(() => message.channel.send(`Disabled radio on ${voicechannel.name}`).catch(err => message.channel.send(`Could not disable radio on ${voicechannel.name} because ${err.message}`)));
+    radio(message.guild.id).blacklist(voicechannel).then(() => message.channel.send(`Disabled radio on ${voicechannel.name}`).catch(err => message.channel.send(`Could not disable radio on ${voicechannel.name} because ${err.message}`)));
 
 
   },

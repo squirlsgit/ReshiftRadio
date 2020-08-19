@@ -12,6 +12,6 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    message.channel.send(`Can not play on ${(await radio.fetchBlackouts()).join(', ')}`);
+    message.channel.send(`Can not play on ${(await radio(message.guild.id).fetchBlackouts()).join(', ')}`);
   },
 };

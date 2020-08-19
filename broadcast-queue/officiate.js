@@ -13,7 +13,7 @@ module.exports = {
   async execute(message, ...args) {
 
     const throne_members = message.mentions.members.array();
-    radio.addRadioHosts(message.member, false, ...throne_members);
+    radio(message.guild.id).addRadioHosts(message.member, false, ...throne_members);
 
     message.channel.send("Platformed " + throne_members.map(member => member.displayName).join(', '));
 

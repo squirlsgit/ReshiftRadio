@@ -24,7 +24,7 @@ module.exports = {
       return;
     }
 
-    radio.addRadioFrequency(voicechannel).then(_v => {
+    radio(message.guild.id).addRadioFrequency(voicechannel).then(_v => {
       if (_v) {
         message.channel.send(`Broadcasting on ${voicechannel.name}..`)
       } else {

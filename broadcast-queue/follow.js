@@ -12,7 +12,7 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    radio.stalk = message.mentions.members.first();
-    message.author.dmChannel.send("Now following member " + radio.avoid.displayName);
+    radio(message.guild.id).stalk = message.mentions.members.first();
+    message.author.dmChannel.send("Now following member " + radio(message.guild.id).avoid.displayName);
   },
 };

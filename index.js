@@ -15,7 +15,7 @@ Bot.getPrompts('clock', 'clockify');
 
 // Init Broadcast
 
-Bot.getPrompts('broadcast', 'broadcast-queue');
+Bot.getPrompts('zm', 'broadcast-queue');
 
 Bot.getPrompts('help', 'tooltips');
 Bot.init();

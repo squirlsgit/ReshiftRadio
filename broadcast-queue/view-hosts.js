@@ -11,6 +11,6 @@ module.exports = {
    * @param {...any} args
    */
   async execute(message, ...args) {
-    message.channel.send(`Radio Hosts: ${radio.hosts.array().map(host => host.name).join(', ')}`);
+    message.channel.send(`Radio Hosts: ${radio(message.guild.id).hosts.array().map(host => host.name).join(', ')}`);
   }
 };

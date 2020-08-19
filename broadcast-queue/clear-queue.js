@@ -12,11 +12,11 @@ module.exports = {
    */
   async execute(message, ...args) {
 
-    if (radio.station && radio.broadcaster) {
-      radio.broadcaster.destroy();
+    if (radio(message.guild.id).station && radio(message.guild.id).broadcaster) {
+      radio(message.guild.id).broadcaster.destroy();
     }
 
-    radio.queue.clear();
+    radio(message.guild.id).queue.clear();
     
     message.channel.send("Stopped broadcast and cleared song queue. Channels that were being broadcasted on will be broadcasted on again upon adding a song.");
 

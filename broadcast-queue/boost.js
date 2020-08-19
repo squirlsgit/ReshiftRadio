@@ -21,7 +21,7 @@ module.exports = {
       return;
     }
 
-    radio.whitelist(voicechannel).then((v) => {
+    radio(message.guild.id).whitelist(voicechannel).then((v) => {
       if (v) {
 
         message.channel.send(`Radio is enabled on ${voicechannel.name}`);

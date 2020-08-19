@@ -13,10 +13,10 @@ module.exports = {
   async execute(message, ...args) {
 
 
-    if (radio.currentConnection) {
-      radio.currentConnection.disconnect();
-      radio.channels.delete(radio.currentConnection.channel.id);
-      radio.currentConnection = null;
+    if (radio(message.guild.id).currentConnection) {
+      radio(message.guild.id).currentConnection.disconnect();
+      radio(message.guild.id).channels.delete(radio(message.guild.id).currentConnection.channel.id);
+      radio(message.guild.id).currentConnection = null;
       message.channel.send(`No longer broadcasting on ${voicechannel.name}..`);
     }
 

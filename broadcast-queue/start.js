@@ -19,7 +19,7 @@ module.exports = {
     /**
      * @type {VoiceBroadcast}
      * */
-    const res = await radio.playBroadcast(message.member);
+    const res = await radio(message.guild.id).playBroadcast(message.member);
     if (res) {
       message.channel.send(`Starting broadcast`);
 
