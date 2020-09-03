@@ -1,12 +1,11 @@
 const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
 const discord = require('discord.js');
-const radio = require('./helper-radio.js');
+const radio = require('./helper-radio.js').radio;
 
 module.exports = {
   description: 'Starts broadcast',
 
   /**
-   * 
    * @param {Message} message
    * @param {...any} args
    */
@@ -16,6 +15,8 @@ module.exports = {
       return message.guild.channels.cache.find(channel => channel.name === voice_channel_name && channel.type === 'voice');
     });
 
+
+    console.log("guild id", message.guild.id);
     /**
      * @type {VoiceBroadcast}
      * */

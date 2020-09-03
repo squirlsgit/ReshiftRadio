@@ -1,12 +1,11 @@
 const { Channel, User, GuildMember, BroadcastDispatcher, StreamDispatcher, VoiceBroadcast, Message, VoiceChannel, VoiceConnection, Collection } = require('discord.js');
 const discord = require('discord.js');
-const radio = require('./helper-radio.js');
+const radio = require('./helper-radio.js').radio;
 
 module.exports = {
   description: 'Broadcasts to channel',
 
   /**
-   * 
    * @param {Message} message
    * @param {...any} args
    */

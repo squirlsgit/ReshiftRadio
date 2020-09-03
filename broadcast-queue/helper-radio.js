@@ -593,19 +593,23 @@ const radios = new Discord.Collection();
  * @param {string} guildId
  */
 const addRadio = (guildId) => {
-  if (Bot.Client.guilds.cache.has(guildId)) {
+  //console.log(guildId);
+  console.log("guild id", guildId);
+  //if (Bot.Client.guilds.cache.has(guildId)) {
     if (radios.has(guildId)) {
       /**
        * @type {Radio}
        * */
       const radio = radios.get(guildId);
       radio.guild.logger.info("Guild has a radio. Not creating new radio.");
-      return;
+      return radio;
     }
 
+    
     radios.set(guildId, new Radio(new Guild(guildId)));
     return radios.get(guildId);
-  }
+  //}
+  //console.log("Cache does not have guildid", guildId);
   //new Radio(new Guild('735904221999792189'));
   
 }
@@ -613,7 +617,7 @@ const addRadio = (guildId) => {
 const radio = (guildId) => {
   if (radios.has(guildId)) {
     return radios.get(guildId);
-  } else return addRadio(Bot.Client, guildId);
+  } else return addRadio(guildId);
   
 }
 
